@@ -84,8 +84,9 @@ def train_spm(path_to_corpus, modelname, vocab_size=30000, **kwargs):
             f"--model_type=bpe"]
     for k, v in kwargs.items():
         opts.append(f"--{k}={v}")
-
+    logger.info(f"spm options: {opts}")
     spm.SentencePieceTrainer.Train(" ".join(opts))
+    logger.info("Finished training sentencepiece model")
 
 
 def train_word2vec(lines,
@@ -115,12 +116,15 @@ def train_word2vec(lines,
 
     s = Sentences(lines)
     model = Word2Vec(min_count=0, **kwargs)
+    logger.info("building vocab")
     model.build_vocab(s)
+    logger.info("starting training")
     model.train(s,
                 total_examples=model.corpus_count,
                 epochs=model.epochs)
+    logger.info("done training")
 
-    return reorder_embeddings(sp, model)
+    return reorder_embeddings(sp, model.wv)
 
 
 def train(path_to_corpus,
