@@ -45,6 +45,21 @@ train(my_corpus,
 
 The end result is a trained spm model and a trained word2vec model in .vec file format, both of which are _aligned_.
 
+The spm model and embeddings can then be fed into [BPEmb](https://github.com/bheinzerling/bpemb), as follows:
+
+```python
+from bpemb import BPEmb
+from bpemb.util import sentencepiece_load, load_word2vec_file
+
+b = BPEmb(lang="en")
+b.spm = sentencepiece_load("spm_model_name.model")
+b.emb = load_word2vec_file("w2v_path")
+
+s = b.embed("the dog flew over the fence")
+print(s.shape)
+
+```
+
 ## License
 
 MIT
