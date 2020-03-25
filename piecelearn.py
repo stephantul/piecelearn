@@ -123,12 +123,12 @@ def train_word2vec(lines,
     return reorder_embeddings(sp, model)
 
 
-def end_to_end(path_to_corpus,
-               spm_model_name,
-               vocab_size,
-               spm_kwargs,
-               word2vec_path,
-               w2v_kwargs):
+def train(path_to_corpus,
+          spm_model_name,
+          vocab_size,
+          word2vec_path,
+          spm_kwargs=None,
+          w2v_kwargs=None):
     """
     Train an spm and a word2vec model.
 
@@ -158,6 +158,10 @@ def end_to_end(path_to_corpus,
         vectors for all our wordpieces.
 
     """
+    if spm_kwargs is None:
+        spm_kwargs = {}
+    if w2v_kwargs is None:
+        w2v_kwargs = {}
     train_spm(path_to_corpus, spm_model_name, **spm_kwargs)
     words, vectors = train_word2vec(open(path_to_corpus),
                                     f"{spm_model_name}.model",
