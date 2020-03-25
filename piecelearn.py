@@ -5,12 +5,24 @@ from gensim.models import Word2Vec
 from itertools import tee
 
 
+NO_OPT = {"input", "model_prefix", "vocab_size", "model_type"}
+
+
 class Sentences(object):
+    """An iterator over a generator."""
 
     def __init__(self, generator_expression):
+        """
+        parameters
+        ----------
+        generator_expression : generator
+            A generator.
+
+        """
         self.generator_expression, self.g = tee(generator_expression)
 
     def __iter__(self):
+        """Start from a new iterator over the generator."""
         self.generator_expression, self.g = tee(self.generator_expression)
         return self
 
@@ -19,6 +31,10 @@ class Sentences(object):
 
 
 def train_spm(path_to_corpus, modelname, vocab_size=30000, **kwargs):
+    intersection = set(kwargs.keys()) & NO_OPT
+    if intersection:
+        raise ValueError(f"{intersection} can not be assigned via kwargs")
+
     opts = [f"--input={path_to_corpus}",
             f"--model_prefix={modelname}",
             f"--vocab_size={vocab_size}",
