@@ -53,7 +53,7 @@ def reorder_embeddings(sp, wv):
     return [sp.id_to_piece(x) for x in range(len(sp))], new_vecs
 
 
-def train_spm(path_to_corpus, modelname, vocab_size=30000, **kwargs):
+def train_spm(path_to_corpus, modelname, vocab_size=30000, model_type="bpe", **kwargs):
     """
     Train an SPM model.
 
@@ -78,10 +78,12 @@ def train_spm(path_to_corpus, modelname, vocab_size=30000, **kwargs):
     if intersection:
         raise ValueError(f"{intersection} can not be assigned via kwargs")
 
-    opts = [f"--input={path_to_corpus}",
-            f"--model_prefix={modelname}",
-            f"--vocab_size={vocab_size}",
-            f"--model_type=bpe"]
+    opts = [
+        f"--input={path_to_corpus}",
+        f"--model_prefix={modelname}",
+        f"--vocab_size={vocab_size}",
+        f"--model_type={model_type}",
+    ]
     for k, v in kwargs.items():
         opts.append(f"--{k}={v}")
     logger.info(f"spm options: {opts}")
@@ -89,9 +91,7 @@ def train_spm(path_to_corpus, modelname, vocab_size=30000, **kwargs):
     logger.info("Finished training sentencepiece model")
 
 
-def train_word2vec(lines,
-                   spm_path,
-                   **kwargs):
+def train_word2vec(lines, spm_path, **kwargs):
     """
     Train a Word2Vec model on lines with an encoded model.
 
@@ -119,20 +119,20 @@ def train_word2vec(lines,
     logger.info("building vocab")
     model.build_vocab(s)
     logger.info("starting training")
-    model.train(s,
-                total_examples=model.corpus_count,
-                epochs=model.epochs)
+    model.train(s, total_examples=model.corpus_count, epochs=model.epochs)
     logger.info("done training")
 
     return reorder_embeddings(sp, model.wv)
 
 
-def train(path_to_corpus,
-          spm_model_name,
-          vocab_size,
-          word2vec_path,
-          spm_kwargs=None,
-          w2v_kwargs=None):
+def train(
+    path_to_corpus,
+    spm_model_name,
+    vocab_size,
+    word2vec_path,
+    spm_kwargs=None,
+    w2v_kwargs=None,
+):
     """
     Train an spm and a word2vec model.
 
@@ -167,11 +167,11 @@ def train(path_to_corpus,
     if w2v_kwargs is None:
         w2v_kwargs = {}
     train_spm(path_to_corpus, spm_model_name, **spm_kwargs)
-    words, vectors = train_word2vec(open(path_to_corpus),
-                                    f"{spm_model_name}.model",
-                                    **w2v_kwargs)
-    with open(word2vec_path, 'w') as f:
-        shape = ' '.join([str(x) for x in vectors.shape])
+    words, vectors = train_word2vec(
+        open(path_to_corpus), f"{spm_model_name}.model", **w2v_kwargs
+    )
+    with open(word2vec_path, "w") as f:
+        shape = " ".join([str(x) for x in vectors.shape])
         f.write(f"{shape}\n")
         for word, vec in zip(words, vectors):
             f.write(f"{word} {' '.join(str(x) for x in vec)}\n")
