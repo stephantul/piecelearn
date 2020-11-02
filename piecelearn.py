@@ -166,7 +166,7 @@ def train(
         spm_kwargs = {}
     if w2v_kwargs is None:
         w2v_kwargs = {}
-    train_spm(path_to_corpus, spm_model_name, **spm_kwargs)
+    train_spm(path_to_corpus, spm_model_name, vocab_size=vocab_size, **spm_kwargs)
     words, vectors = train_word2vec(
         open(path_to_corpus), f"{spm_model_name}.model", **w2v_kwargs
     )
