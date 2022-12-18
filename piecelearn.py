@@ -4,7 +4,6 @@ import logging
 import numpy as np
 
 from gensim.models import Word2Vec
-from itertools import tee
 
 
 NO_OPT = {"input", "model_prefix", "vocab_size", "model_type"}
@@ -20,7 +19,7 @@ class Sentences(object):
     https://jacopofarina.eu/posts/gensim-generator-is-not-iterator/
     """
 
-    def __init__(self, generator_expression):
+    def __init__(self, filename, sentencepieceprocessor):
         """
         parameters
         ----------
@@ -28,15 +27,18 @@ class Sentences(object):
             A generator.
 
         """
-        self.generator_expression, self.g = tee(generator_expression)
+        self.filename = filename
+        self.sentencepieceprocessor = sentencepieceprocessor
 
     def __iter__(self):
         """Start from a new iterator over the generator."""
-        self.generator_expression, self.g = tee(self.generator_expression)
+        self.generator_expression = open(self.filename)
         return self
 
     def __next__(self):
-        return next(self.g)
+        return self.sentencepieceprocessor.encode_as_pieces(
+            next(self.generator_expression)
+        )
 
 
 def reorder_embeddings(sp, wv):
@@ -45,7 +47,7 @@ def reorder_embeddings(sp, wv):
     # Create new random vectors with same mean and std
     mean, std = vecs.mean(0), vecs.std(0)
     new_vecs = np.random.normal(mean, std, size=(len(sp), vecs.shape[1]))
-    new_indices = np.asarray([sp.piece_to_id(x) for x in wv.index2word])
+    new_indices = np.asarray([sp.piece_to_id(x) for x in wv.index_to_key])
     mask = new_indices != 0
     masked = new_indices[mask]
     assert np.all(np.unique(masked, return_counts=True)[1] == 1)
@@ -112,9 +114,7 @@ def train_word2vec(lines, spm_path, **kwargs):
     # return value is boolean.
     sp.load(spm_path)
 
-    lines = (sp.encode_as_pieces(x.strip()) for x in lines)
-
-    s = Sentences(lines)
+    s = Sentences(lines, sp)
     model = Word2Vec(min_count=0, **kwargs)
     logger.info("building vocab")
     model.build_vocab(s)
@@ -168,7 +168,7 @@ def train(
         w2v_kwargs = {}
     train_spm(path_to_corpus, spm_model_name, vocab_size=vocab_size, **spm_kwargs)
     words, vectors = train_word2vec(
-        open(path_to_corpus), f"{spm_model_name}.model", **w2v_kwargs
+        path_to_corpus, f"{spm_model_name}.model", **w2v_kwargs
     )
     with open(word2vec_path, "w") as f:
         shape = " ".join([str(x) for x in vectors.shape])
